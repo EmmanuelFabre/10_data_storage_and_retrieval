@@ -12,7 +12,7 @@ import datetime as dt
 
 engine = create_engine("sqlite:///hawaii.sqlite", connect_args={'check_same_thread': False})
 #SQLite by default prohibits use of single connection in more than one thread. 
-#Hence, add 'connect_args={'check_same_thread':False} paramter to your engine
+#Hence, add 'connect_args={'check_same_thread':False} parameter to your engine
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -57,13 +57,11 @@ lo_hi_avg = (session
 			   )
 
 
-# A date string in the format %Y-%m-%d
-start_date= "2017-03-21"
-end_date= "2017-03-31"
 
-
+#################################################
 
 #############FLASK CODE BELOW####################
+
 #Create an app; remember to pass __name__
 #__name__ represents the name of the python file.
 app = Flask(__name__)
@@ -79,8 +77,11 @@ def home():
 		f"/api/v1.0/precipitation<br/>"
 		f"/api/v1.0/stations<br/>"
 		f"/api/v1.0/tobs<br/>"
-		f"/api/v1.0/03-21-17<br/>"
-		f"/api/v1.0/03-21-17/03-31-17<br/>"
+		f"Please provide the date from which you would like data, in %Y-%m-%d format to the end of the URL.<br/>" 
+		f"/api/v1.0/<start><br/>"
+		f"Please provide the Start and End dates for your trip, in %Y-%m-%d format to the end of the URL.<br/>" 
+		f"/api/v1.0/<start>/<end><br/>"
+		
 	)
 
 @app.route("/api/v1.0/precipitation")
@@ -88,9 +89,6 @@ def precip():
 	#Convert the query results to a Dictionary using date as the key and..
 	#..prcp as the value.
 	#Return the JSON representation of your dictionary.
-
-#test convert query result from tuple to list
-	#convert = list(np.ravel(last_12_date_prcp))
 
 	lst = []
 	for x in last_12_date_prcp:
@@ -101,10 +99,7 @@ def precip():
 		lst.append(precip_dict)
 	return jsonify(lst)
 
-#check out flask with orm in 10.3!!!!!!!!!!!
-#check the 'variable_rule'  or 'justice_league' 'app.py file from 10.3
-	#value of jsonify - type 'flask run' in terminal. Go to /jsonified..
-	#..route and it returns a dictionary
+
 
 @app.route("/api/v1.0/stations")
 def stations():
@@ -138,11 +133,11 @@ def temps():
 		lst_tobs.append(tobs_dict)
 	return jsonify(lst_tobs)
 
-@app.route("/api/v1.0/03-21-17")
-def start():
+@app.route("/api/v1.0/<start>")
+def start(start):
 	beyond_date= (session
 		.query(Measurement.date, func.min(Measurement.tobs).label("min_tobs"), func.avg(Measurement.tobs).label("avg_tobs"), func.max(Measurement.tobs).label("max_tobs"))
-		.filter(Measurement.date >= start_date).all())
+		.filter(Measurement.date >= start).all())
 	lst_beyond = []
 	for z in beyond_date:
 		beyond_dict = {}
@@ -153,11 +148,12 @@ def start():
 		lst_beyond.append(beyond_dict)
 	return jsonify(lst_beyond)
 
-@app.route("/api/v1.0/03-21-17/03-31-17")
-def start_end():
+@app.route("/api/v1.0/<start>/<end>")
+def start_end(start, end):
 	trip_dates= (session
 		.query(func.min(Measurement.tobs).label("min_tobs"), func.avg(Measurement.tobs).label("avg_tobs"), func.max(Measurement.tobs).label("max_tobs"))
-		.filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all())
+		.filter(Measurement.date >= start)
+		.filter(Measurement.date <= end).all())
 	lst_dates = []
 	for z in trip_dates:
 		dates_dict = {}
@@ -167,9 +163,6 @@ def start_end():
 		dates_dict["Max Temp"] = z.max_tobs
 		lst_dates.append(dates_dict)
 	return jsonify(lst_dates)
-
-
-
 
 
 
